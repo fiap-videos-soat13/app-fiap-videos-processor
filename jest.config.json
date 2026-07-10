@@ -1,0 +1,17 @@
+{
+  "preset": "ts-jest",
+  "rootDir": "src",
+  "testEnvironment": "node",
+  "testMatch": ["<rootDir>/**/*.spec.ts"],
+  "moduleNameMapper": {
+    "^@core/(.*)$": "<rootDir>/core/$1",
+    "^@domain/(.*)$": "<rootDir>/core/domain/$1",
+    "^@application/(.*)$": "<rootDir>/core/application/$1",
+    "^@adapter/(.*)$": "<rootDir>/adapter/$1",
+    "^@validators/(.*)$": "<rootDir>/core/domain/validators/$1",
+    "^@use-cases/(.*)$": "<rootDir>/core/application/use-cases/$1"
+  },
+  "transform": {
+    "^.+\\.(t|j)s$": ["ts-jest", { "isolatedModules": true }]
+  }
+}
