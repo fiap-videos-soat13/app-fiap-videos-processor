@@ -6,6 +6,7 @@ import { LoggerService } from '@domain/services/LoggerService';
 import {
   VideoProcessingCompletedEventPort,
   VideoProcessingFailedEventPort,
+  VideoProcessingStartedEventPort,
 } from '@domain/outboundPorts/ProcessorEventPorts';
 
 export type ProcessVideoInput = {
@@ -23,6 +24,7 @@ export class ProcessVideoJobUseCase {
     private readonly storage: VideoStoragePort,
     private readonly extractor: VideoFrameExtractor,
     private readonly completedEvents: VideoProcessingCompletedEventPort,
+    private readonly startedEvents: VideoProcessingStartedEventPort,
     private readonly failedEvents: VideoProcessingFailedEventPort,
     private readonly logger: LoggerService,
   ) {}
@@ -48,6 +50,10 @@ export class ProcessVideoJobUseCase {
       job.id,
       ProcessingJobStatus.Processing,
       {},
+      async (updated, emit) => {
+        const envelope = this.startedEvents.buildEnvelope(updated);
+        await emit(envelope);
+      },
     );
 
     const videoPath = this.storage.resolveVideoPath(input.storageKey);

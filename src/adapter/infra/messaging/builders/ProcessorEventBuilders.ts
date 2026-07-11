@@ -3,6 +3,7 @@ import type { ProcessingJob } from '@domain/entities/ProcessingJob';
 import {
   VideoProcessingCompletedEventPort,
   VideoProcessingFailedEventPort,
+  VideoProcessingStartedEventPort,
 } from '@domain/outboundPorts/ProcessorEventPorts';
 import {
   VideoEventType,
@@ -27,6 +28,27 @@ export class VideoProcessingCompletedEnvelopeBuilder extends VideoProcessingComp
         originalFileName: job.originalFileName,
         zipStorageKey: job.zipStorageKey ?? '',
         completedAt: now,
+      },
+    };
+  }
+}
+
+export class VideoProcessingStartedEnvelopeBuilder extends VideoProcessingStartedEventPort {
+  buildEnvelope(job: ProcessingJob): VideoEventEnvelope {
+    const now = new Date().toISOString();
+    return {
+      eventId: randomUUID(),
+      correlationId: job.correlationId,
+      workflowId: job.correlationId,
+      videoJobId: job.id,
+      eventType: VideoEventType.VideoProcessingStarted,
+      occurredAt: now,
+      schemaVersion: SCHEMA_VERSION[VideoEventType.VideoProcessingStarted],
+      payload: {
+        userId: job.userId,
+        userEmail: job.userEmail,
+        originalFileName: job.originalFileName,
+        startedAt: now,
       },
     };
   }

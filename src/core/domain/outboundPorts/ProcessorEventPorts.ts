@@ -5,6 +5,10 @@ export abstract class VideoProcessingCompletedEventPort {
   abstract buildEnvelope(job: ProcessingJob): VideoEventEnvelope;
 }
 
+export abstract class VideoProcessingStartedEventPort {
+  abstract buildEnvelope(job: ProcessingJob): VideoEventEnvelope;
+}
+
 export abstract class VideoProcessingFailedEventPort {
   abstract buildEnvelope(
     job: ProcessingJob,

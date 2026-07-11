@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 export const VideoEventType = {
   VideoProcessingRequested: 'VideoProcessingRequested',
+  VideoProcessingStarted: 'VideoProcessingStarted',
   VideoProcessingCompleted: 'VideoProcessingCompleted',
   VideoProcessingFailed: 'VideoProcessingFailed',
 } as const;
@@ -15,6 +16,7 @@ export type VideoEventType =
 
 export const SCHEMA_VERSION = {
   [VideoEventType.VideoProcessingRequested]: 1,
+  [VideoEventType.VideoProcessingStarted]: 1,
   [VideoEventType.VideoProcessingCompleted]: 1,
   [VideoEventType.VideoProcessingFailed]: 1,
 } as const;
@@ -26,6 +28,7 @@ const baseEnvelopeFields = {
   videoJobId: z.uuid(),
   eventType: z.enum([
     VideoEventType.VideoProcessingRequested,
+    VideoEventType.VideoProcessingStarted,
     VideoEventType.VideoProcessingCompleted,
     VideoEventType.VideoProcessingFailed,
   ]),
@@ -38,6 +41,13 @@ export const VideoProcessingRequestedPayloadSchema = z.object({
   userEmail: z.email(),
   originalFileName: z.string().min(1),
   storageKey: z.string().min(1),
+});
+
+export const VideoProcessingStartedPayloadSchema = z.object({
+  userId: z.uuid(),
+  userEmail: z.email(),
+  originalFileName: z.string().min(1),
+  startedAt: z.iso.datetime(),
 });
 
 export const VideoProcessingCompletedPayloadSchema = z.object({
@@ -60,6 +70,11 @@ export const VideoEventEnvelopeSchema = z.discriminatedUnion('eventType', [
     ...baseEnvelopeFields,
     eventType: z.literal(VideoEventType.VideoProcessingRequested),
     payload: VideoProcessingRequestedPayloadSchema,
+  }),
+  z.object({
+    ...baseEnvelopeFields,
+    eventType: z.literal(VideoEventType.VideoProcessingStarted),
+    payload: VideoProcessingStartedPayloadSchema,
   }),
   z.object({
     ...baseEnvelopeFields,

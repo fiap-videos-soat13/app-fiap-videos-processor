@@ -8,6 +8,7 @@ import { FfmpegFrameExtractor } from '@adapter/infra/video/FfmpegFrameExtractor'
 import {
   VideoProcessingCompletedEnvelopeBuilder,
   VideoProcessingFailedEnvelopeBuilder,
+  VideoProcessingStartedEnvelopeBuilder,
 } from '@adapter/infra/messaging/builders/ProcessorEventBuilders';
 import { ConsoleLoggerService } from '@adapter/infra/services/ConsoleLoggerService';
 import { AmqpConnection } from '@adapter/infra/messaging/amqp/AmqpConnection';
@@ -48,6 +49,7 @@ export function buildProcessor(): ProcessorContext {
     process.env.FFMPEG_PATH?.trim() || 'ffmpeg',
   );
   const completed = new VideoProcessingCompletedEnvelopeBuilder();
+  const started = new VideoProcessingStartedEnvelopeBuilder();
   const failed = new VideoProcessingFailedEnvelopeBuilder();
 
   const processVideo = new ProcessVideoJobUseCase(
@@ -55,6 +57,7 @@ export function buildProcessor(): ProcessorContext {
     storage,
     extractor,
     completed,
+    started,
     failed,
     logger,
   );
