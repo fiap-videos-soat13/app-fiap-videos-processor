@@ -1,0 +1,81 @@
+# Docker Compose for app-fiap-videos-processor (isolated local development)
+# Usage:
+#   1. Start shared RabbitMQ: cd ../app-fiap-videos-infra/docker && docker compose up rabbitmq -d
+#   2. docker compose up -d --build
+#
+# For end-to-end flows, use ../app-fiap-videos-infra/docker/docker-compose.yml.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fiap-videos-processor-pg
+    ports:
+      - '5434:5432'
+    environment:
+      POSTGRES_USER: fiap
+      POSTGRES_PASSWORD: fiap
+      POSTGRES_DB: fiap_videos_processor
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U fiap -d fiap_videos_processor']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - processor-network
+
+  processor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fiap-videos-processor
+    ports:
+      - '3001:3001'
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      PORT: 3001
+      HOST: 0.0.0.0
+      NODE_ENV: production
+      DATABASE_URL: postgresql://fiap:fiap@postgres:5432/fiap_videos_processor
+      RABBITMQ_URL: amqp://fiap:fiap@host.docker.internal:5673/
+      STORAGE_PATH: /app/storage
+      FFMPEG_PATH: ffmpeg
+      CONSUMER_PREFETCH: 5
+      VIDEO_EVENTS_EXCHANGE: fiap-videos.events
+      VIDEO_EVENTS_DLX: fiap-videos.events.dlx
+      RABBITMQ_CONNECTION_NAME: processor
+    volumes:
+      - video_storage:/app/storage
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--no-verbose',
+          '--tries=1',
+          '--spider',
+          'http://127.0.0.1:3001/health/live',
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - processor-network
+
+volumes:
+  pgdata:
+  video_storage:
+
+networks:
+  processor-network:
+    driver: bridge
