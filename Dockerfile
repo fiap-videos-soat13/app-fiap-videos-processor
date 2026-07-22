@@ -23,3 +23,9 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -qO- http://127.0.0.1:3001/health/live || exit 1
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "dist/adapter/infra/http/Main.js"]
+
+FROM runner AS migrator
+COPY scripts/docker-migrate.js ./scripts/docker-migrate.js
+USER fiap
+ENTRYPOINT []
+CMD ["node", "scripts/docker-migrate.js"]
