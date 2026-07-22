@@ -6,18 +6,27 @@ export class LocalVideoStorage extends VideoStoragePort {
     super();
   }
 
-  resolveVideoPath(storageKey: string): string {
-    return path.join(this.basePath, storageKey);
+  resolveVideoPath(storageKey: string): Promise<string> {
+    return Promise.resolve(path.join(this.basePath, storageKey));
   }
 
-  buildZipPath(jobId: string): {
+  buildZipPath(jobId: string): Promise<{
     zipStorageKey: string;
     fullPath: string;
-  } {
+  }> {
     const zipStorageKey = `${jobId}.zip`;
-    return {
+    return Promise.resolve({
       zipStorageKey,
       fullPath: path.join(this.basePath, 'zips', zipStorageKey),
-    };
+    });
+  }
+
+  finalizeZip(
+    _zipStorageKey: string,
+    _localZipPath: string,
+  ): Promise<void> {
+    void _zipStorageKey;
+    void _localZipPath;
+    return Promise.resolve();
   }
 }

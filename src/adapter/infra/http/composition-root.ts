@@ -3,7 +3,7 @@ import cron from 'node-cron';
 import { Registry, collectDefaultMetrics } from 'prom-client';
 import { ProcessVideoJobUseCase } from '@use-cases/videoJob/ProcessVideoJobUseCase';
 import { DrizzleProcessingJobRepository } from '@adapter/infra/repository/DrizzleProcessingJobRepository';
-import { LocalVideoStorage } from '@adapter/infra/storage/LocalVideoStorage';
+import { createVideoStorage } from '@adapter/infra/storage/storageFactory';
 import { FfmpegFrameExtractor } from '@adapter/infra/video/FfmpegFrameExtractor';
 import {
   VideoProcessingCompletedEnvelopeBuilder,
@@ -42,9 +42,7 @@ export function buildProcessor(): ProcessorContext {
   const sagaMetrics = new SagaMetricsService(registry);
 
   const jobs = new DrizzleProcessingJobRepository();
-  const storage = new LocalVideoStorage(
-    process.env.STORAGE_PATH?.trim() || './storage',
-  );
+  const storage = createVideoStorage();
   const extractor = new FfmpegFrameExtractor(
     process.env.FFMPEG_PATH?.trim() || 'ffmpeg',
   );
