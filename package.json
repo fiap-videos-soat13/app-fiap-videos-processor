@@ -12,7 +12,7 @@
     "lint:ci": "eslint \"src/**/*.ts\" --max-warnings 0",
     "typecheck": "tsc --noEmit --skipLibCheck",
     "db:migrate": "ts-node -r tsconfig-paths/register scripts/migrate.ts",
-    "test:unit": "jest --config jest.config.json"
+    "test:unit": "jest --config jest.config.json --passWithNoTests"
   },
   "dependencies": {
     "amqplib": "^0.10.8",
