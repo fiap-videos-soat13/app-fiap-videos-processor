@@ -1,0 +1,85 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+
+env:
+  AWS_REGION: sa-east-1
+  ECR_REPOSITORY: fiap-videos-processor
+  EKS_CLUSTER_NAME: fiap-videos-staging
+  K8S_NAMESPACE: fiap-videos
+  K8S_OVERLAY: staging
+  K8S_DEPLOYMENT: staging-fiap-videos-processor
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set image tag
+        id: meta
+        run: echo "image_tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Configure AWS credentials
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push Docker image
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')
+        env:
+          ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
+          IMAGE_TAG: ${{ steps.meta.outputs.image_tag }}
+        run: |
+          docker build -t "$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG" .
+          docker tag "$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG" "$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:latest-staging"
+          docker push "$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG"
+          docker push "$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:latest-staging"
+
+  deploy:
+    needs: build-and-push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/staging' && vars.CD_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.INFRA_K8S_REPOSITORY || 'fiap-videos-soat13/app-fiap-videos-infra-k8s' }}
+          token: ${{ secrets.INFRA_CHECKOUT_TOKEN || github.token }}
+          path: infra-k8s
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name "${{ vars.EKS_CLUSTER_NAME || env.EKS_CLUSTER_NAME }}" --region "${{ env.AWS_REGION }}"
+
+      - name: Apply Kustomize overlay
+        working-directory: infra-k8s/k8s/overlays/${{ env.K8S_OVERLAY }}
+        run: |
+          kubectl apply -k .
+          kubectl rollout status deployment/${{ env.K8S_DEPLOYMENT }} -n "${{ env.K8S_NAMESPACE }}" --timeout=300s
+
+      - name: Annotate deployment with commit SHA
+        run: |
+          kubectl annotate deployment/${{ env.K8S_DEPLOYMENT }} \
+            -n "${{ env.K8S_NAMESPACE }}" \
+            fiap-videos.dev/commit-sha="${{ github.sha }}" \
+            --overwrite
