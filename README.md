@@ -24,8 +24,8 @@ docker compose up --build
 docker compose up --build
 ```
 
-Starts processor + Postgres (`:5434`) + RabbitMQ (`:5674`).  
-**Note:** isolated mode does not receive uploads unless events are published to this broker and videos exist in storage.
+Starts processor + Postgres (`:5432`).  
+**Note:** isolated mode does not receive uploads unless events are published to the shared broker and videos exist in storage.
 
 ### Development server (`yarn start:dev`)
 
@@ -60,7 +60,7 @@ STORAGE_PATH=../app-fiap-videos-api/storage
 
 Processor listens on http://localhost:3001 (health/metrics only).
 
-Ensure `.env` uses `localhost` ports (`5434` for service-owned Postgres, or `5433` with shared infra) and `5673` for RabbitMQ.
+Ensure `.env` uses `localhost:5432` for Postgres and `5673` for RabbitMQ.
 
 `yarn start:dev` runs `prestart:dev`, which starts this service's Postgres container (`fiap_videos_processor` is created automatically on first boot).
 
@@ -91,8 +91,15 @@ See [`.env.example`](./.env.example). Key vars: `DATABASE_URL`, `RABBITMQ_URL`, 
 yarn lint:ci
 yarn typecheck
 yarn test:unit
+yarn test:cov
 yarn build
 ```
+
+GitHub Actions runs `build`, `lint`, `type-check`, `test-unit`, `security-audit`, and a `ci-success` gate on every push and pull request to `main`.
+
+## Infrastructure
+
+Local Docker Compose, Prometheus, Grafana, and Kubernetes drafts live in [`app-fiap-videos-infra`](../app-fiap-videos-infra).
 
 ## Architecture
 

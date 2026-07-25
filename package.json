@@ -6,13 +6,13 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json && cp -r src/adapter/infra/database/migrations dist/adapter/infra/database/",
     "start": "node dist/adapter/infra/http/Main.js",
-    "prestart:dev": "docker compose up postgres -d",
     "start:dev": "NODE_ENV=development ts-node -r tsconfig-paths/register src/adapter/infra/http/Main.ts",
     "lint": "eslint \"src/**/*.ts\" --fix",
     "lint:ci": "eslint \"src/**/*.ts\" --max-warnings 0",
     "typecheck": "tsc --noEmit --skipLibCheck",
     "db:migrate": "ts-node -r tsconfig-paths/register scripts/migrate.ts",
-    "test:unit": "jest --config jest.config.json"
+    "test:unit": "jest --config jest.config.json",
+    "test:cov": "jest --config jest.config.json --coverage"
   },
   "dependencies": {
     "amqplib": "^0.10.8",
@@ -51,5 +51,6 @@
   },
   "engines": {
     "node": ">=22.0"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
