@@ -56,11 +56,12 @@ export class ProcessVideoJobUseCase {
       },
     );
 
-    const videoPath = this.storage.resolveVideoPath(input.storageKey);
-    const { zipStorageKey, fullPath } = this.storage.buildZipPath(job.id);
+    const videoPath = await this.storage.resolveVideoPath(input.storageKey);
+    const { zipStorageKey, fullPath } = await this.storage.buildZipPath(job.id);
 
     try {
       await this.extractor.extractFramesToZip(videoPath, fullPath);
+      await this.storage.finalizeZip(zipStorageKey, fullPath);
 
       await this.jobs.updateStatusWithOutbox(
         job.id,
