@@ -1,5 +1,4 @@
 import express from 'express';
-import cron from 'node-cron';
 import { Registry, collectDefaultMetrics } from 'prom-client';
 import { ProcessVideoJobUseCase } from '@use-cases/videoJob/ProcessVideoJobUseCase';
 import { DrizzleProcessingJobRepository } from '@adapter/infra/repository/DrizzleProcessingJobRepository';
@@ -109,9 +108,14 @@ export function buildProcessor(): ProcessorContext {
     ).catch(next);
   });
 
-  cron.schedule('*/5 * * * * *', () => {
-    void outboxRelay.tick();
-  });
+  const outboxRelayIntervalMs =
+    Number(process.env.OUTBOX_RELAY_INTERVAL_MS) || 5000;
+  const scheduleNextRelayTick = () => {
+    setTimeout(() => {
+      void outboxRelay.tick().then(scheduleNextRelayTick);
+    }, outboxRelayIntervalMs);
+  };
+  scheduleNextRelayTick();
 
   return { app, amqp, subscriber };
 }

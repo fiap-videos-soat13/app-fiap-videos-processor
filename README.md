@@ -95,7 +95,14 @@ yarn test:cov
 yarn build
 ```
 
-GitHub Actions runs `build`, `lint`, `type-check`, `test-unit`, `security-audit`, and a `ci-success` gate on every push and pull request to `main`.
+Integration tests run against a real PostgreSQL database:
+
+```bash
+yarn test:integration                 # needs DATABASE_URL (or a Postgres on localhost:5433)
+bash scripts/run-integration-tests.sh # spins up a throwaway Postgres container automatically
+```
+
+GitHub Actions runs `build`, `lint`, `type-check`, `test-unit`, `test-integration`, `security-audit`, and a `ci-success` gate on every push and pull request to `main`.
 
 ## Infrastructure
 

@@ -58,6 +58,7 @@ describe('ProcessVideoJobUseCase', () => {
         zipStorageKey: 'zips/job-id.zip',
         fullPath: '/storage/zips/job-id.zip',
       }),
+      finalizeZip: jest.fn().mockResolvedValue(undefined),
     };
     extractor = {
       extractFramesToZip: jest.fn().mockResolvedValue(undefined),

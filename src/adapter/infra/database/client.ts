@@ -51,3 +51,10 @@ export async function closeDb(): Promise<void> {
   pool = null;
   db = null;
 }
+
+export async function resetDatabase(url?: string): Promise<void> {
+  await closeDb();
+  if (url) {
+    process.env.DATABASE_URL = url;
+  }
+}
