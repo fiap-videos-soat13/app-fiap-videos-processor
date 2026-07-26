@@ -33,7 +33,7 @@ export type ProcessorContext = {
   subscriber: VideoProcessingRequestedSubscriber;
 };
 
-export function buildProcessor(): ProcessorContext {
+export function buildProcessorServer(): ProcessorContext {
   const logger = new ConsoleLoggerService('app-fiap-videos-processor');
   const registry = new Registry();
   collectDefaultMetrics({ register: registry });
