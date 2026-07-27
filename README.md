@@ -161,9 +161,11 @@ yarn build
 Integration tests run against a real PostgreSQL database:
 
 ```bash
-yarn test:integration                 # needs DATABASE_URL (or a Postgres on localhost:5433)
+yarn test:integration                 # needs DATABASE_URL (default: ephemeral Postgres on localhost:5433)
 bash scripts/run-integration-tests.sh # spins up a throwaway Postgres container automatically
 ```
+
+> Dev Compose uses Postgres on port `5432`. Integration tests default to port `5433` so they do not clash with a running dev database. See [app-fiap-videos-infra/README-database.md](../app-fiap-videos-infra/README-database.md).
 
 GitHub Actions runs `build`, `lint`, `type-check`, `test-unit`, `test-integration`, `security-audit`, and a `ci-success` gate on every push and pull request to `main`.
 
