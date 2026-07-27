@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
+import { createLogger } from '@adapter/infra/logging/loggerFactory';
 import { Inbox } from '../Inbox';
-import { ConsoleLoggerService } from '@adapter/infra/services/ConsoleLoggerService';
 import { VideoEventType } from '@validators/VideoEventEnvelopeValidator';
 import type { VideoEventEnvelope } from '@validators/VideoEventEnvelopeValidator';
 import { getDb } from '@adapter/infra/database/client';
@@ -26,7 +26,7 @@ function buildEnvelope(): VideoEventEnvelope {
 }
 
 describe('Inbox integration', () => {
-  const logger = new ConsoleLoggerService();
+  const logger = createLogger('inbox-integration-test');
   const inbox = new Inbox(logger);
 
   beforeEach(() => {

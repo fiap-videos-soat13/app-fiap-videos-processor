@@ -9,7 +9,7 @@ import {
   VideoProcessingFailedEnvelopeBuilder,
   VideoProcessingStartedEnvelopeBuilder,
 } from '@adapter/infra/messaging/builders/ProcessorEventBuilders';
-import { ConsoleLoggerService } from '@adapter/infra/services/ConsoleLoggerService';
+import { createLogger } from '@adapter/infra/logging/loggerFactory';
 import { AmqpConnection } from '@adapter/infra/messaging/amqp/AmqpConnection';
 import { AmqpPublisher } from '@adapter/infra/messaging/amqp/AmqpPublisher';
 import { OutboxRelayWorker } from '@adapter/infra/messaging/outbox/OutboxRelayWorker';
@@ -34,7 +34,7 @@ export type ProcessorContext = {
 };
 
 export function buildProcessorServer(): ProcessorContext {
-  const logger = new ConsoleLoggerService('app-fiap-videos-processor');
+  const logger = createLogger('app-fiap-videos-processor');
   const registry = new Registry();
   collectDefaultMetrics({ register: registry });
   const httpMetrics = registerHttpMetrics(registry);

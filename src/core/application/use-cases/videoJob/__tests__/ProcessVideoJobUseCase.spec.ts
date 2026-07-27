@@ -72,7 +72,7 @@ describe('ProcessVideoJobUseCase', () => {
     failedEvents = {
       buildEnvelope: jest.fn().mockReturnValue({ type: 'VideoProcessingFailed' }),
     };
-    logger = { log: jest.fn(), error: jest.fn() };
+    logger = { log: jest.fn(), warn: jest.fn(), error: jest.fn() };
 
     useCase = new ProcessVideoJobUseCase(
       jobs,

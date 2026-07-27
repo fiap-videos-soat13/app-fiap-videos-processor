@@ -5,7 +5,7 @@ import {
 } from '@validators/VideoEventEnvelopeValidator';
 import { AmqpConnection } from '../amqp/AmqpConnection';
 import { Inbox } from '../inbox/Inbox';
-import { ConsoleLoggerService } from '@adapter/infra/services/ConsoleLoggerService';
+import type { LoggerPort } from '@domain/outboundPorts/LoggerPort';
 
 export type EventHandler<TPayload> = (
   envelope: VideoEventEnvelope,
@@ -28,7 +28,7 @@ export class BaseEventSubscriber<TPayload> {
   constructor(
     private readonly connection: AmqpConnection,
     private readonly inbox: Inbox,
-    private readonly logger: ConsoleLoggerService,
+    private readonly logger: LoggerPort,
     private readonly config: BaseEventSubscriberConfig<TPayload>,
   ) {
     this.dlqName = `${config.queueName}.dlq`;

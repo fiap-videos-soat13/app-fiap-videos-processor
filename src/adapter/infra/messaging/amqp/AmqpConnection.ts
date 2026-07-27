@@ -1,7 +1,7 @@
 import * as amqp from 'amqplib';
 import type { ConfirmChannel, ChannelModel } from 'amqplib';
 import { assertVideoTopology } from './AmqpTopology';
-import { ConsoleLoggerService } from '@adapter/infra/services/ConsoleLoggerService';
+import type { LoggerPort } from '@domain/outboundPorts/LoggerPort';
 
 export class AmqpConnection {
   private model: ChannelModel | null = null;
@@ -9,7 +9,7 @@ export class AmqpConnection {
   private confirmChannelPromise: Promise<ConfirmChannel> | null = null;
 
   constructor(
-    private readonly logger: ConsoleLoggerService,
+    private readonly logger: LoggerPort,
     private readonly exchangeName: string,
     private readonly dlxName: string,
     private readonly connectionName: string,

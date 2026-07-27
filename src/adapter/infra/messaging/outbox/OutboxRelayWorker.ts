@@ -6,7 +6,7 @@ import {
 } from '@adapter/infra/database/schema';
 import { parseEnvelope } from '@validators/VideoEventEnvelopeValidator';
 import { AmqpPublisher } from '../amqp/AmqpPublisher';
-import { ConsoleLoggerService } from '@adapter/infra/services/ConsoleLoggerService';
+import type { LoggerPort } from '@domain/outboundPorts/LoggerPort';
 import type { SagaMetricsService } from '@adapter/infra/observability/SagaMetricsService';
 
 const BATCH_SIZE = 32;
@@ -18,7 +18,7 @@ export class OutboxRelayWorker {
 
   constructor(
     private readonly publisher: AmqpPublisher,
-    private readonly logger: ConsoleLoggerService,
+    private readonly logger: LoggerPort,
     private readonly sagaMetrics?: SagaMetricsService,
   ) {
     this.maxAttempts =
