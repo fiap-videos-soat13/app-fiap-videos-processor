@@ -2,12 +2,12 @@ import { eq } from 'drizzle-orm';
 import { getDb } from '@adapter/infra/database/client';
 import { processedEvents } from '@adapter/infra/database/schema';
 import type { VideoEventEnvelope } from '@validators/VideoEventEnvelopeValidator';
-import { ConsoleLoggerService } from '@adapter/infra/services/ConsoleLoggerService';
+import type { LoggerPort } from '@domain/outboundPorts/LoggerPort';
 import type { SagaMetricsService } from '@adapter/infra/observability/SagaMetricsService';
 
 export class Inbox {
   constructor(
-    private readonly logger: ConsoleLoggerService,
+    private readonly logger: LoggerPort,
     private readonly sagaMetrics?: SagaMetricsService,
   ) {}
 

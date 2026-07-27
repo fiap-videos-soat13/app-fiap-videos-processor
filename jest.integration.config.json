@@ -2,8 +2,8 @@
   "preset": "ts-jest",
   "rootDir": "src",
   "testEnvironment": "node",
-  "testMatch": ["<rootDir>/**/*.spec.ts"],
-  "testPathIgnorePatterns": ["\\.integration\\.spec\\.ts$"],
+  "testMatch": ["<rootDir>/**/*.integration.spec.ts"],
+  "moduleFileExtensions": ["js", "json", "ts"],
   "moduleNameMapper": {
     "^@core/(.*)$": "<rootDir>/core/$1",
     "^@domain/(.*)$": "<rootDir>/core/domain/$1",
@@ -13,6 +13,15 @@
     "^@use-cases/(.*)$": "<rootDir>/core/application/use-cases/$1"
   },
   "transform": {
-    "^.+\\.(t|j)s$": ["ts-jest", { "isolatedModules": true }]
-  }
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      {
+        "isolatedModules": true,
+        "tsconfig": {
+          "esModuleInterop": true
+        }
+      }
+    ]
+  },
+  "setupFilesAfterEnv": ["<rootDir>/__tests__/helpers/setup.ts"]
 }

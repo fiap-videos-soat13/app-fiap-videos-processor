@@ -1,10 +1,10 @@
 import 'dotenv/config';
-import { buildProcessor } from './composition-root';
+import { buildProcessorServer } from './composition-root';
 import { runMigrations, closeDb } from '@adapter/infra/database/client';
 
 async function bootstrap(): Promise<void> {
   await runMigrations();
-  const { app, amqp, subscriber } = buildProcessor();
+  const { app, amqp, subscriber } = buildProcessorServer();
   await amqp.connect();
   await subscriber.start();
 

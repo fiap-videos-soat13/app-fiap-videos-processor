@@ -24,22 +24,22 @@ docker compose up --build
 docker compose up --build
 ```
 
-Starts processor + Postgres (`:5434`) + RabbitMQ (`:5674`).  
-**Note:** isolated mode does not receive uploads unless events are published to this broker and videos exist in storage.
+Starts processor + Postgres (`:5432`).  
+**Note:** isolated mode does not receive uploads unless events are published to the shared broker and videos exist in storage.
 
 ### Development server (`yarn start:dev`)
 
-**1. Start infrastructure** (shared Postgres + **single RabbitMQ**):
+**1. Start infrastructure** (shared Postgres, RabbitMQ, MinIO):
 
 ```bash
 cd ../app-fiap-videos-infra/docker
-docker compose up postgres rabbitmq -d
+docker compose up postgres rabbitmq minio minio-init -d
 ```
 
-Or processor-only Postgres + shared RabbitMQ:
+Or processor-only Postgres + shared RabbitMQ + MinIO:
 
 ```bash
-cd ../app-fiap-videos-infra/docker && docker compose up rabbitmq -d
+cd ../app-fiap-videos-infra/docker && docker compose up rabbitmq minio minio-init -d
 cd ../app-fiap-videos-processor && docker compose up postgres -d
 ```
 
@@ -52,15 +52,9 @@ yarn db:migrate
 yarn start:dev
 ```
 
-When developing with the API on the same machine, share video files:
-
-```env
-STORAGE_PATH=../app-fiap-videos-api/storage
-```
-
 Processor listens on http://localhost:3001 (health/metrics only).
 
-Ensure `.env` uses `localhost` ports (`5434` for service-owned Postgres, or `5433` with shared infra) and `5673` for RabbitMQ.
+Ensure `.env` uses `localhost:5432` for Postgres, `5673` for RabbitMQ, and MinIO at `http://localhost:9000` (see `.env.example`).
 
 `yarn start:dev` runs `prestart:dev`, which starts this service's Postgres container (`fiap_videos_processor` is created automatically on first boot).
 
@@ -83,7 +77,7 @@ Uses transactional **outbox** for publishes and **inbox** for idempotent consump
 
 ## Environment
 
-See [`.env.example`](./.env.example). Key vars: `DATABASE_URL`, `RABBITMQ_URL`, `STORAGE_PATH`, `FFMPEG_PATH`, `CONSUMER_PREFETCH`.
+See [`.env.example`](./.env.example). Key vars: `DATABASE_URL`, `RABBITMQ_URL`, `STORAGE_BACKEND`, `S3_BUCKET`, `S3_ENDPOINT`, `FFMPEG_PATH`, `CONSUMER_PREFETCH`.
 
 ## Tests & CI
 
@@ -91,8 +85,22 @@ See [`.env.example`](./.env.example). Key vars: `DATABASE_URL`, `RABBITMQ_URL`, 
 yarn lint:ci
 yarn typecheck
 yarn test:unit
+yarn test:cov
 yarn build
 ```
+
+Integration tests run against a real PostgreSQL database:
+
+```bash
+yarn test:integration                 # needs DATABASE_URL (or a Postgres on localhost:5433)
+bash scripts/run-integration-tests.sh # spins up a throwaway Postgres container automatically
+```
+
+GitHub Actions runs `build`, `lint`, `type-check`, `test-unit`, `test-integration`, `security-audit`, and a `ci-success` gate on every push and pull request to `main`.
+
+## Infrastructure
+
+Local Docker Compose, Prometheus, Grafana, and Kubernetes drafts live in [`app-fiap-videos-infra`](../app-fiap-videos-infra).
 
 ## Architecture
 
@@ -101,4 +109,4 @@ Wiring in `src/adapter/infra/http/composition-root.ts`.
 
 ## Docker
 
-Image includes **ffmpeg**. Shared `video_storage` volume must match the API service for end-to-end processing.
+Image includes **ffmpeg**. Videos and zips are stored in MinIO locally (`STORAGE_BACKEND=minio`) or AWS S3 in production.
