@@ -9,6 +9,75 @@ Async worker service: consumes `VideoProcessingRequested`, extracts video frames
 - Publish `VideoProcessingStarted`, `VideoProcessingCompleted`, or `VideoProcessingFailed`
 - Idempotent processing (skips already-completed jobs)
 
+## Architecture
+
+### Role in the platform
+
+The processor is an **async worker** — no public business API. It consumes `VideoProcessingRequested`, runs ffmpeg frame extraction, builds a zip, and publishes lifecycle events back to the bus.
+
+```mermaid
+graph LR
+    RMQ["RabbitMQ"]
+    Processor["Processor :3001"]
+    PG[("fiap_videos_processor")]
+    Storage["MinIO / S3"]
+
+    RMQ -- "VideoProcessingRequested" --> Processor
+    Processor --> PG
+    Processor --> Storage
+    Processor -- "Started / Completed / Failed" --> RMQ
+```
+
+### Processing flow
+
+1. `VideoProcessingRequested` arrives on queue `fiap-videos.processor.VideoProcessingRequested`.
+2. Inbox deduplication; skip if job already `completed`.
+3. Upsert `processing_jobs`, publish `VideoProcessingStarted` (via outbox).
+4. Download video from `videos/{jobId}-{file}`, extract one frame per second with ffmpeg.
+5. Pack frames into zip at `zips/{jobId}.zip`, upload to object storage.
+6. Publish `VideoProcessingCompleted` or `VideoProcessingFailed` (via outbox).
+
+### Hexagonal layout
+
+```
+src/
+├── core/
+│   ├── domain/          # ProcessingJob entity, ports, VideoFrameExtractor
+│   └── application/     # ProcessVideoJobUseCase
+└── adapter/
+    └── infra/           # Drizzle, RabbitMQ, ffmpeg, S3/MinIO, outbox relay, health/metrics
+```
+
+Wiring: `src/adapter/infra/http/composition-root.ts`.
+
+### Database (`fiap_videos_processor`)
+
+| Table | Purpose |
+|-------|---------|
+| `processing_jobs` | Local job state mirror (idempotent re-processing) |
+| `outbox` / `outbox_dead_letters` | Reliable event publishing |
+| `processed_events` | Inbox deduplication |
+
+### Messaging
+
+Exchange: `fiap-videos.events` (topic). Queue pattern: `fiap-videos.processor.{eventType}`.
+
+| Direction | Event |
+|-----------|-------|
+| Consumes | `VideoProcessingRequested` |
+| Publishes (outbox) | `VideoProcessingStarted`, `VideoProcessingCompleted`, `VideoProcessingFailed` |
+
+Prefetch is configurable via `CONSUMER_PREFETCH`. Failed messages go to per-queue DLQs.
+
+### Dependencies
+
+| Dependency | Usage |
+|------------|-------|
+| PostgreSQL | Job state and outbox |
+| RabbitMQ | Event bus |
+| MinIO / S3 | Read `videos/…`, write `zips/…` |
+| ffmpeg | Frame extraction (bundled in Docker image) |
+
 ## Run locally
 
 ### Full stack
@@ -92,20 +161,17 @@ yarn build
 Integration tests run against a real PostgreSQL database:
 
 ```bash
-yarn test:integration                 # needs DATABASE_URL (or a Postgres on localhost:5433)
+yarn test:integration                 # needs DATABASE_URL (default: ephemeral Postgres on localhost:5433)
 bash scripts/run-integration-tests.sh # spins up a throwaway Postgres container automatically
 ```
+
+> Dev Compose uses Postgres on port `5432`. Integration tests default to port `5433` so they do not clash with a running dev database. See [app-fiap-videos-infra/README-database.md](../app-fiap-videos-infra/README-database.md).
 
 GitHub Actions runs `build`, `lint`, `type-check`, `test-unit`, `test-integration`, `security-audit`, and a `ci-success` gate on every push and pull request to `main`.
 
 ## Infrastructure
 
-Local Docker Compose, Prometheus, Grafana, and Kubernetes drafts live in [`app-fiap-videos-infra`](../app-fiap-videos-infra).
-
-## Architecture
-
-Hexagonal layout under `src/` — use cases in `core/application`, ffmpeg/storage adapters in `adapter/infra`.  
-Wiring in `src/adapter/infra/http/composition-root.ts`.
+Local Docker Compose, Prometheus, Grafana, and Kubernetes manifests live in [`app-fiap-videos-infra`](../app-fiap-videos-infra).
 
 ## Docker
 
